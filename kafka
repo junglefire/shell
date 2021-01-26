@@ -1,0 +1,68 @@
+#!/bin/bash
+
+kafka_config="$KAFKA_HOME/etc/kafka/server.properties"
+zookeeper="--zookeeper anthill:2181"
+bootstrap="--bootstrap-server anthill:9092"
+
+if [ $# -eq 0 ]; then
+	echo "[usage]kafka <start|dstart|stop|destroy|topic>"
+	exit -1
+fi
+
+if [ $1 == "start" ]; then
+	echo "zookeeper start ..."
+	zkServer.sh start
+    echo "kafka server start ..."
+    kafka-server-start ${kafka_config}
+	echo $?
+elif [ $1 == "dstart" ]; then
+	echo "zookeeper start ..."
+    zkServer.sh start
+    echo "kafka server start as daemon ..."
+    kafka-server-start ${kafka_config} 1>/dev/null 2>&1 &
+elif [ $1 == "stop" ]; then
+    echo "kafka server stop ..."
+    kafka-server-stop
+elif [ $1 == "destroy" ]; then
+    echo "☠️  destroy zookeeper and kafka server, clear zookeeper and kafka data ..."
+	echo "stop kafka server ..."
+	kafka-server-stop
+	ks=`jps | grep Kafka | wc -l`
+	while [[ $ks -ne 0 ]]
+	do
+		echo "kafka server stopping ..."
+		sleep 3
+		ks=`jps | grep Kafka | wc -l`
+	done
+    echo "stop zookeeper..."
+	zkServer.sh stop
+	ks=`jps | grep QuorumPeerMain | wc -l`
+    while [[ $ks -ne 0 ]]
+    do
+		echo "zookeeper stopping ..."
+        sleep 3
+        ks=`jps | grep QuorumPeerMain | wc -l`
+    done
+	echo "clear zookeeper data ..."
+	rm -rf $HOME/data/zk/*	
+	rm -rf $HOME/logs/zk/*
+	echo "clear kafka data ..."	
+	rm -rf $HOME/data/kafka/*
+	rm -rf $HOME/logs/kafka/*
+elif [ $1 == "topic" ]; then
+	if [ $# -lt 2 ]; then
+		echo "[usage] kafka topic <list|desc|create|consumer>"
+		exit -1
+	fi
+	if [ $2 == "list" ]; then
+		kafka-topics $zookeeper --$2
+	elif [ $2 == "create" ]; then
+		kafka-topics $zookeeper --$2 --topic $3 --partitions 3 --replication-factor 1
+	elif [ $2 == "desc" ]; then
+		kafka-topics $zookeeper --describe --topic $3
+	elif [ $2 == "consumer" ]; then
+        kafka-console-consumer $bootstrap --topic $3 --from-beginning
+	fi
+else
+	echo "invalid command"
+fi

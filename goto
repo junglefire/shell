@@ -1,0 +1,37 @@
+#!/usr/bin/expect -f
+
+array set hosts {
+	anthill	120.79.27.199 
+	beehive	47.88.228.137 
+	larkbay 172.18.155.220
+	orcabay 172.18.155.221
+}
+
+if {$argc != 1} {
+	send_user "usage: goto <hostname>\n"
+	send_user "valid hostname: \n"
+	foreach name [array names hosts] {
+    		send_user "  $name -> $hosts($name)\n"
+	}
+	exit
+}
+
+set host [lindex $argv 0]
+
+if {![info exists hosts($host)]} {
+	send_user "$host not exists, abort!\n"
+	send_user "valid hostname: \n"
+	foreach name [array names hosts] {
+    		send_user "  $name -> $hosts($name)\n"
+	}
+	exit
+}
+
+send_user "login remote server $hosts($host)\n"
+
+spawn ssh alex@$hosts($host)
+
+expect {  
+	"*password:" { send "blademaster\r" }   
+}
+interact

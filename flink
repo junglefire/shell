@@ -1,0 +1,34 @@
+#!/bin/bash
+
+hosts=('larkbay' 'orcabay')
+
+if [ $# -eq 0 ]; then
+	echo "[usage]flink <start|stop|destroy>"
+	exit -1
+fi
+
+if [ $1 == "start" ]; then
+	echo "flink cluster start ..."
+	$FLINK_HOME/bin/start-cluster.sh
+elif [ $1 == "stop" ]; then
+    echo "flink cluster stop ..."
+	$FLINK_HOME/bin/stop-cluster.sh
+elif [ $1 == "destroy" ]; then
+    echo "destroy flink cluster ..."
+	$FLINK_HOME/bin/stop-cluster.sh
+	ks=`jps | grep StandaloneSessionCluster | wc -l`
+	while [[ $ks -ne 0 ]]; do
+		echo "flink cluster stopping ..."
+		sleep 3
+		ks=`jps | grep StandaloneSessionCluster | wc -l`
+	done
+	rm -rf $HOME/data/flink/*
+	rm -rf $HOME/logs/flink/*
+	for host in ${hosts[@]}; do
+    	echo "destroy node $host ..."
+		ssh alex@$host "rm -rf $HOME/data/flink/*"
+		ssh alex@$host "rm -rf $HOME/logs/flink/*"
+	done
+else
+	echo "invalid command"
+fi

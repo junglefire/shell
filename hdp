@@ -1,0 +1,34 @@
+#!/bin/bash
+
+hosts=('larkbay' 'orcabay')
+
+if [ $# -eq 0 ]; then
+	echo "[usage]hadoop <format|start|stop|destroy>"
+	exit -1
+fi
+
+if [ $1 == "format" ]; then
+	echo "format hdfs..."
+	$HADOOP_HOME/bin/hdfs namenode -format
+elif [ $1 == "start" ]; then
+    echo "hadoop cluster start ..."
+	$HADOOP_HOME/sbin/start-dfs.sh
+	$HADOOP_HOME/sbin/start-yarn.sh
+elif [ $1 == "stop" ]; then
+    echo "hadoop cluster stop ..."
+	$HADOOP_HOME/sbin/stop-dfs.sh
+	$HADOOP_HOME/sbin/stop-yarn.sh
+elif [ $1 == "destroy" ]; then
+    echo "destroy hadoop cluster ..."
+	$HADOOP_HOME/sbin/stop-dfs.sh
+	$HADOOP_HOME/sbin/stop-yarn.sh
+	rm -rf $HOME/data/hadoop/*
+	rm -rf $HOME/logs/hadoop/*
+	for host in ${hosts[@]}; do
+    	echo "destroy node $host ..."
+		ssh alex@$host "rm -rf $HOME/data/hadoop/*"
+		ssh alex@$host "rm -rf $HOME/logs/hadoop/*"
+	done
+else
+	echo "invalid command"
+fi

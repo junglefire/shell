@@ -1,0 +1,35 @@
+#!/bin/bash
+
+hosts=('larkbay' 'orcabay')
+
+if [ $# -eq 0 ]; then
+	echo "[usage]flink <start|stop>"
+	exit -1
+fi
+
+if [ $1 == "start" ]; then
+	echo "apache spark cluster start ..."
+	$SPARK_HOME/sbin/start-all.sh
+elif [ $1 == "stop" ]; then
+    echo "apache spark cluster stop ..."
+	$SPARK_HOME/sbin/stop-all.sh
+elif [ $1 == "destroy" ]; then
+    echo "destroy spark cluster ..."
+	$SPARK_HOME/sbin/stop-all.sh
+	ks=`jps | grep Master | wc -l`
+	while [[ $ks -ne 0 ]]; do
+		echo "spark cluster stopping ..."
+		sleep 3
+		ks=`jps | grep Master | wc -l`
+	done
+	rm $HOME/*.log
+	rm -rf $HOME/metastore_db
+	rm -rf $SPARK_HOME/logs/*
+	for host in ${hosts[@]}; do
+    	echo "destroy node $host ..."
+		ssh alex@$host "rm -rf $SPARK_HOME/logs/*"
+		ssh alex@$host "rm -rf $SPARK_HOME/logs/*"
+	done
+else
+	echo "invalid command"
+fi
